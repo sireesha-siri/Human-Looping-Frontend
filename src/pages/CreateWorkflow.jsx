@@ -1,6 +1,3 @@
-// ============================================
-// Workflow creation form
-// ============================================
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { workflowAPI } from '../services/api';
@@ -15,20 +12,34 @@ const CreateWorkflow = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [slowWarning, setSlowWarning] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSlowWarning(false);
+
+    // Show warning after 5 seconds if still loading
+    const warningTimer = setTimeout(() => {
+      setSlowWarning(true);
+    }, 5000);
 
     try {
-      await workflowAPI.create(formData);
+      const response = await workflowAPI.create(formData);
+      clearTimeout(warningTimer);
+      console.log('Workflow created:', response.data);
       alert('Workflow created successfully!');
       navigate('/approvals');
     } catch (error) {
-      setError(error.response?.data?.message || 'Error creating workflow');
+      clearTimeout(warningTimer);
+      console.error('Error creating workflow:', error);
+      
+      // Use the user-friendly message from the interceptor
+      setError(error.userMessage || 'Error creating workflow');
     } finally {
       setLoading(false);
+      setSlowWarning(false);
     }
   };
 
@@ -52,7 +63,14 @@ const CreateWorkflow = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="p-8 bg-white rounded-lg shadow-md">
+      {slowWarning && (
+        <div className="px-4 py-3 mb-6 text-yellow-700 border border-yellow-200 rounded-lg bg-yellow-50">
+          <p className="font-medium">⏳ This is taking longer than usual...</p>
+          <p className="mt-1 text-sm">The server may be waking up from sleep (Render free tier). This can take 30-50 seconds on the first request. Please wait...</p>
+        </div>
+      )}
+
+      <div className="p-8 bg-white rounded-lg shadow-md">
         <div className="mb-6">
           <label className="block mb-2 font-medium text-gray-700">
             Workflow Name *
@@ -63,7 +81,7 @@ const CreateWorkflow = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="e.g., Deploy to Production"
           />
         </div>
@@ -78,7 +96,7 @@ const CreateWorkflow = () => {
             onChange={handleChange}
             required
             rows="4"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Describe what this workflow does..."
           />
         </div>
@@ -91,7 +109,7 @@ const CreateWorkflow = () => {
             name="type"
             value={formData.type}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="deployment">Deployment</option>
             <option value="email_campaign">Email Campaign</option>
@@ -114,7 +132,7 @@ const CreateWorkflow = () => {
                   value={level}
                   checked={formData.riskLevel === level}
                   onChange={handleChange}
-                  className="w-4 h-4 mr-2 text-primary"
+                  className="w-4 h-4 mr-2 text-blue-500"
                 />
                 <span className="capitalize">{level}</span>
               </label>
@@ -126,19 +144,31 @@ const CreateWorkflow = () => {
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="flex-1 px-6 py-3 font-medium text-gray-700 transition border border-gray-300 rounded-lg hover:bg-gray-50"
+            disabled={loading}
+            className="flex-1 px-6 py-3 font-medium text-gray-700 transition border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             disabled={loading}
-            className="flex-1 px-6 py-3 font-medium text-white transition rounded-lg bg-primary hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-3 font-medium text-white transition bg-blue-500 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Creating...' : 'Create Workflow'}
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="w-5 h-5 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Creating...
+              </span>
+            ) : (
+              'Create Workflow'
+            )}
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
