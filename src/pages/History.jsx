@@ -38,6 +38,18 @@ const History = () => {
     failed: 'bg-gray-100 text-gray-800',
   };
 
+  const getStatusLabel = (status) => {
+    const labels = {
+      created: 'CREATED',
+      pending_approval: 'PENDING',
+      approved: 'APPROVED',
+      rejected: 'REJECTED',
+      completed: 'COMPLETED',
+      failed: 'FAILED',
+    };
+    return labels[status] || status.toUpperCase();
+  };
+
   const filteredWorkflows = workflows.filter(w => {
     if (filter === 'all') return true;
     return w.status === filter;
@@ -66,11 +78,11 @@ const History = () => {
             onClick={() => setFilter(status)}
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === status
-                ? 'bg-primary text-white'
+                ? 'bg-blue-500 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
-            {status === 'all' ? 'All' : status.replace('_', ' ').toUpperCase()}
+            {status === 'all' ? 'All' : status === 'pending_approval' ? 'Pending' : status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
       </div>
@@ -93,10 +105,10 @@ const History = () => {
                   <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">
                     Risk
                   </th>
                   <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
@@ -118,15 +130,15 @@ const History = () => {
                     <td className="px-6 py-4 text-sm text-gray-500 capitalize">
                       {workflow.type.replace('_', ' ')}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[workflow.status]}`}>
-                        {workflow.status.replace('_', ' ').toUpperCase()}
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap ${statusColors[workflow.status]}`}>
+                        {getStatusLabel(workflow.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-sm capitalize ${
-                        workflow.riskLevel === 'high' ? 'text-red-600 font-semibold' :
-                        workflow.riskLevel === 'medium' ? 'text-yellow-600 font-medium' :
+                    <td className="px-6 py-4 text-center">
+                      <span className={`text-sm font-semibold capitalize ${
+                        workflow.riskLevel === 'high' ? 'text-red-600' :
+                        workflow.riskLevel === 'medium' ? 'text-yellow-600' :
                         'text-green-600'
                       }`}>
                         {workflow.riskLevel}
